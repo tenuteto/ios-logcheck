@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="使用ログ">
+<title>アプリ使用ログ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#f5f5f2; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#6f6d67;
+  --grid:#e4e3dc; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --wash:rgba(42,120,214,.09);
+  --accent:#2a78d6; --accent-ink:#1c5cab; --on-accent:#ffffff;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --other:#b8b6ad; --note:#8a5a00; --note-bg:#fbf1dc;
+  --display:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#9d9b92;
+    --grid:#2c2c2a; --axis:#3d3d3a; --ring:rgba(255,255,255,.10); --wash:rgba(57,135,229,.16);
+    --accent:#3987e5; --accent-ink:#86b6ef; --on-accent:#ffffff;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --other:#5c5b56; --note:#f0c25e; --note-bg:#2a2414;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#9d9b92;
+  --grid:#2c2c2a; --axis:#3d3d3a; --ring:rgba(255,255,255,.10); --wash:rgba(57,135,229,.16);
+  --accent:#3987e5; --accent-ink:#86b6ef; --on-accent:#ffffff;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --other:#5c5b56; --note:#f0c25e; --note-bg:#2a2414;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:26px;letter-spacing:.01em}
+h2{font-size:17px}
+h3{font-size:14.5px}
+.num{font-variant-numeric:tabular-nums}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);margin:0 0 2px}
+.btn{appearance:none;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);font:600 14px/1 var(--body);padding:12px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{filter:brightness(1.06)}
+.btn:focus-visible,.seg button:focus-visible,.hit:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.range{display:flex;flex-direction:column;gap:2px;background:var(--surface);border-radius:12px;box-shadow:0 0 0 1px var(--ring);padding:12px 14px}
+.range .label{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.range .span{font-weight:700;font-size:16px}
+.range .src{font-size:12.5px;color:var(--ink-2)}
+.range .src.sample{color:var(--note)}
+
+.stats{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0;padding:0;list-style:none;font-size:13px;color:var(--ink-2)}
+.stats b{color:var(--ink);font-weight:600;margin-left:4px}
+
+.panel{background:var(--surface);border-radius:14px;box-shadow:0 0 0 1px var(--ring);padding:16px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px;box-shadow:inset 0 0 0 1px var(--ring)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink-2);font:600 14px/1 var(--body);padding:9px 16px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12),0 0 0 1px var(--ring)}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.capbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--grid);font-size:13px;color:var(--ink-2)}
+.capbar select{font:600 14px var(--body);color:var(--ink);background:var(--bg);border:0;box-shadow:inset 0 0 0 1px var(--ring);border-radius:8px;padding:7px 10px}
+.capbar select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 8px;padding:0;list-style:none;font-size:12.5px;color:var(--ink-2)}
+.legend li{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.chart text.sel{fill:var(--ink);font-weight:700}
+.hit{fill:transparent;cursor:pointer}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--ring),0 6px 20px rgba(0,0,0,.16);border-radius:10px;padding:10px 12px;font-size:12.5px;min-width:160px;max-width:240px;z-index:2}
+.tip .t{font-weight:700;font-size:13px;margin-bottom:4px}
+.tip .r{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .r span:first-child{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tip .key{width:10px;height:2px;border-radius:1px;flex:none}
+.tip .v{font-weight:600;font-variant-numeric:tabular-nums}
+
+.detail-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;margin-bottom:12px}
+.total{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.1}
+.total small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--ink-2);margin-left:8px}
+.sub{margin:4px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--grid)}
+.sub h3{margin-bottom:6px}
+.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-top:1px solid var(--grid)}
+.row:first-child{border-top:0}
+.row .name{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
+.row .name span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.row .val small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.track{grid-column:1 / -1;height:6px;border-radius:3px;background:var(--grid);overflow:hidden}
+.track i{display:block;height:100%;border-radius:3px}
+.empty{color:var(--muted);font-size:14px;margin:8px 0}
+.more{appearance:none;border:0;background:none;color:var(--accent-ink);font:600 13.5px/1 var(--body);padding:10px 0 0;cursor:pointer}
+
+details{margin-top:12px;border-top:1px solid var(--grid);padding-top:10px}
+summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--accent-ink)}
+.tablewrap{overflow-x:auto;margin-top:8px;max-height:420px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12px;position:sticky;top:0;background:var(--surface)}
+td.r,th.r{text-align:right}
+
+.notes{font-size:13px;color:var(--ink-2)}
+.notes h2{font-size:15px;margin-bottom:6px;color:var(--ink)}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.welcome{background:var(--surface);border-radius:14px;box-shadow:0 0 0 1px var(--ring);padding:20px 16px}
+.welcome p{margin:8px 0 0;color:var(--ink-2);max-width:60ch}
+.main{display:flex;flex-direction:column;gap:20px}
+.main[hidden]{display:none}
+.err{color:var(--note);background:var(--note-bg);padding:10px 12px;border-radius:10px;font-size:13.5px;margin:0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">iPhone ショートカットの記録から集計</p>
+      <h1>アプリ使用ログ</h1>
+    </div>
+    <div>
+      <label class="btn" for="file">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+        最新のログを読み込む
+      </label>
+      <input type="file" id="file" hidden>
+    </div>
+  </header>
+
+  <section class="welcome" id="welcome">
+    <h2>はじめに、ログを読み込んでください</h2>
+    <p>上の「最新のログを読み込む」をタップし、ファイルAppの「iCloud Drive → ショートカット → app_log.csv」を選びます。読み込んだログはこの端末のブラウザの中だけで集計され、どこにも送信されません。</p>
+  </section>
+
+  <div class="main" id="main" hidden>
+  <div class="range" id="range">
+    <span class="label">表示中のログ</span>
+    <span class="span num" id="rangeSpan"></span>
+    <span class="src" id="rangeSrc"></span>
+  </div>
+
+  <p class="err" id="err" hidden></p>
+  <ul class="stats" id="stats"></ul>
+
+  <section class="panel" aria-labelledby="chartTitle">
+    <div class="controls">
+      <h2 id="chartTitle">使用時間の推移</h2>
+      <div class="seg" role="group" aria-label="集計の単位">
+        <button type="button" id="modeDay" data-mode="day" aria-pressed="true">日</button>
+        <button type="button" id="modeWeek" data-mode="week" aria-pressed="false">週</button>
+        <button type="button" id="modeMonth" data-mode="month" aria-pressed="false">月</button>
+      </div>
+    </div>
+    <ul class="legend" id="legend"></ul>
+    <div class="chart" id="chart"></div>
+    <p class="hint" id="chartHint"></p>
+    <div class="capbar">
+      <label for="cap">記録の間隔があいたときの上限</label>
+      <select id="cap">
+        <option value="5">5分</option>
+        <option value="10" selected>10分</option>
+        <option value="15">15分</option>
+        <option value="30">30分</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="detailTitle">
+    <div class="detail-head">
+      <h2 id="detailTitle"></h2>
+      <div class="total num" id="detailTotal"></div>
+    </div>
+    <div class="sub" id="hourBox">
+      <h3>時間帯別</h3>
+      <div class="chart" id="hourChart"></div>
+    </div>
+    <ul class="rows" id="rows"></ul>
+    <button type="button" class="more" id="moreBtn" hidden></button>
+    <details id="sessionsBox">
+      <summary>使用の明細を見る</summary>
+      <div class="tablewrap"><table id="sessions"></table></div>
+    </details>
+  </section>
+
+  </div>
+
+  <section class="notes" aria-labelledby="notesTitle">
+    <h2 id="notesTitle">集計のしかた</h2>
+    <ul id="notes"></ul>
+  </section>
+</div>
+
+
+<script>
+(function(){
+  const CAP_KEY = 'appUsageLog.cap.v1';
+  const EXCLUDE = new Set(['ショートカット', 'Shortcuts']);
+  const STORE_KEY = 'appUsageLog.csv.v2';
+  const MODE_KEY = 'appUsageLog.mode.v1';
+  const WD = ['日','月','火','水','木','金','土'];
+  const SLOTS = ['--s1','--s2','--s3','--s4','--s5','--s6','--s7','--s8'];
+  const LIMIT = { day: 14, week: 12, month: 12 };
+
+  const $ = id => document.getElementById(id);
+  function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs){ const e = document.createElementNS(svgNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function storeSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+  const pad = n => String(n).padStart(2, '0');
+
+  // ---------- parsing ----------
+  const cleanName = s => s.replace(/[​-‏‪-‮⁦-⁩﻿]/g, '').replace(/^"|"$/g, '').trim();
+  function parseDate(s){
+    const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})\D*?(午前|午後|AM|PM)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(午前|午後|AM|PM)?/i);
+    if(!m) return null;
+    let h = +m[5]; const ap = (m[4] || m[8] || '').toUpperCase();
+    if((ap === '午後' || ap === 'PM') && h < 12) h += 12;
+    if((ap === '午前' || ap === 'AM') && h === 12) h = 0;
+    const t = new Date(+m[1], +m[2] - 1, +m[3], h, +m[6], m[7] ? +m[7] : 0).getTime();
+    return isNaN(t) ? null : { t, precise: m[7] != null };
+  }
+  function parseCSV(text){
+    const ev = []; let skipped = 0;
+    text.replace(/^﻿/, '').split(/\r?\n/).forEach(raw => {
+      const line = raw.trim(); if(!line) return;
+      const a = line.indexOf(','), b = a < 0 ? -1 : line.indexOf(',', a + 1);
+      if(a < 0 || b < 0){ skipped++; return; }
+      const kind = line.slice(a + 1, b).trim().toLowerCase();
+      if(kind !== 'open' && kind !== 'close'){ skipped++; return; }
+      const d = parseDate(line.slice(0, a).trim());
+      if(!d){ skipped++; return; }
+      ev.push({ t: d.t, precise: d.precise, kind, app: cleanName(line.slice(b + 1)) });
+    });
+    // 追記順を正とし、分単位の時刻は前後の記録に合わせて補正
+    let prev = -Infinity;
+    ev.forEach((e, i) => {
+      if(!e.precise){
+        let next = Infinity;
+        for(let j = i + 1; j < ev.length; j++){ if(ev[j].precise){ next = ev[j].t; break; } }
+        e.t = Math.min(Math.max(e.t + 30000, prev), Math.max(next, prev));
+      } else if(e.t < prev) e.t = prev;
+      prev = e.t;
+    });
+    return { events: ev, skipped };
+  }
+
+  // ---------- timeline: 記録ごとに「前面のアプリ」をたどる ----------
+  function buildTimeline(events){
+    const segs = []; const launches = []; let capped = 0;
+    let cur = null;
+    for(let i = 0; i < events.length; i++){
+      const e = events[i];
+      const name = e.app && !EXCLUDE.has(e.app) ? e.app : null;
+      if(e.kind === 'open' && name) launches.push({ app: name, t: e.t });
+      cur = name;
+      const next = events[i + 1];
+      if(!next || !cur) continue;
+      let end = next.t;
+      if(end - e.t > state.cap){ end = e.t + state.cap; capped++; }
+      if(end <= e.t) continue;
+      const last = segs[segs.length - 1];
+      if(last && last.app === cur && last.end === e.t && !last.capped) last.end = end;
+      else segs.push({ app: cur, start: e.t, end });
+      if(end !== next.t) segs[segs.length - 1].capped = true;
+    }
+    return { segs, launches, capped };
+  }
+
+  // ---------- periods ----------
+  const dayKey = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const startOfDay = t => { const d = new Date(t); d.setHours(0,0,0,0); return d; };
+  const weekStart = d => { const w = new Date(d); w.setHours(0,0,0,0); w.setDate(w.getDate() - ((w.getDay() + 6) % 7)); return w; };
+  const monthStart = d => new Date(d.getFullYear(), d.getMonth(), 1);
+  const md = d => (d.getMonth() + 1) + '/' + d.getDate();
+  const baseOf = (d, mode) => mode === 'day' ? startOfDay(d.getTime()) : mode === 'week' ? weekStart(d) : monthStart(d);
+  function step(d, mode){ const n = new Date(d); if(mode === 'day') n.setDate(n.getDate() + 1); else if(mode === 'week') n.setDate(n.getDate() + 7); else n.setMonth(n.getMonth() + 1); return n; }
+
+  function aggregate(mode){
+    const map = new Map();
+    function bucket(d){
+      const base = baseOf(d, mode); const key = dayKey(base);
+      if(!map.has(key)) map.set(key, { key, date: base, total: 0, apps: new Map(), segs: [], days: new Set() });
+      return map.get(key);
+    }
+    function appEntry(b, app){ let a = b.apps.get(app); if(!a){ a = { ms: 0, count: 0 }; b.apps.set(app, a); } return a; }
+    state.segs.forEach(s => {
+      let t = s.start;
+      while(t < s.end){
+        const day = startOfDay(t); const next = step(day, 'day').getTime();
+        const e = Math.min(s.end, next);
+        const b = bucket(day); b.total += e - t; appEntry(b, s.app).ms += e - t; b.days.add(dayKey(day));
+        b.segs.push({ app: s.app, start: t, end: e });
+        t = e;
+      }
+    });
+    state.launches.forEach(l => { appEntry(bucket(new Date(l.t)), l.app).count++; });
+    if(!map.size) return [];
+    const keys = [...map.keys()].sort(); const out = [];
+    let cur = new Date(map.get(keys[0]).date); const last = map.get(keys[keys.length - 1]).date;
+    while(cur <= last){
+      const k = dayKey(cur);
+      out.push(map.get(k) || { key: k, date: new Date(cur), total: 0, apps: new Map(), segs: [], days: new Set() });
+      cur = step(cur, mode);
+    }
+    out.forEach(p => {
+      const d = p.date;
+      if(mode === 'day'){ p.short = md(d); p.label = (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）'; }
+      else if(mode === 'week'){ const e = new Date(d); e.setDate(e.getDate() + 6); p.short = md(d) + '〜'; p.label = md(d) + '（月）〜' + md(e) + '（日）'; }
+      else { p.short = (d.getMonth() + 1) + '月'; p.label = d.getFullYear() + '年' + (d.getMonth() + 1) + '月'; }
+    });
+    return out;
+  }
+
+  // ---------- formatting ----------
+  function fmtDur(ms){
+    const s = Math.round(ms / 1000);
+    if(s < 60) return s + '秒';
+    const m = Math.round(s / 60);
+    if(m < 60) return m + '分';
+    const h = Math.floor(m / 60), r = m % 60;
+    return r ? h + '時間' + r + '分' : h + '時間';
+  }
+  function fmtAxis(min){
+    if(min === 0) return '0';
+    if(min < 60) return min + '分';
+    return min % 60 === 0 ? (min / 60) + '時間' : (min / 60).toFixed(1) + '時間';
+  }
+  const hm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  const stamp = t => { const d = new Date(t); return md(d) + '（' + WD[d.getDay()] + '）' + hm(t); };
+
+  // ---------- state ----------
+  const state = { cap: 10 * 60000, text: '', segs: [], launches: [], capped: 0, events: 0, colors: new Map(), order: [], mode: 'day', periods: [], selected: null, source: '', isSample: true, first: 0, last: 0, showAll: false };
+
+  function assignColors(){
+    const tot = new Map();
+    state.segs.forEach(s => tot.set(s.app, (tot.get(s.app) || 0) + (s.end - s.start)));
+    const ranked = [...tot.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]);
+    const many = ranked.length > 8;
+    state.colors = new Map();
+    ranked.forEach((app, i) => state.colors.set(app, (many && i >= 7) ? 'その他' : app));
+    state.order = many ? ranked.slice(0, 7).concat(['その他']) : ranked.slice();
+  }
+  const groupOf = app => state.colors.get(app) || 'その他';
+  const colorOfGroup = g => g === 'その他' ? 'var(--other)' : 'var(' + SLOTS[Math.max(0, state.order.indexOf(g))] + ')';
+  const colorOfApp = app => colorOfGroup(groupOf(app));
+
+  function analyse(text){
+    const { events } = parseCSV(text);
+    if(!events.length) return null;
+    return { events, last: events[events.length - 1].t, first: events[0].t };
+  }
+  function load(text, label, isSample){
+    const a = analyse(text);
+    if(!a){ showErr('このファイルからは記録を読み取れませんでした。ショートカットで作った app_log.csv を選んでください。'); return false; }
+    hideErr();
+    $('welcome').hidden = true; $('main').hidden = false;
+    state.text = text;
+    const tl = buildTimeline(a.events);
+    Object.assign(state, { segs: tl.segs, launches: tl.launches, capped: tl.capped, events: a.events.length, first: a.first, last: a.last, source: label, isSample });
+    assignColors();
+    const keep = state.selected; setMode(state.mode, keep);
+    return true;
+  }
+  function showErr(m){ const e = $('err'); e.textContent = m; e.hidden = false; }
+  function hideErr(){ $('err').hidden = true; }
+
+  function setMode(mode, keep){
+    state.mode = mode; storeSet(MODE_KEY, mode); state.showAll = false;
+    ['day','week','month'].forEach(m => $('mode' + m[0].toUpperCase() + m.slice(1)).setAttribute('aria-pressed', String(m === mode)));
+    state.periods = aggregate(mode);
+    const withData = state.periods.filter(p => p.total > 0);
+    state.selected = (keep && state.periods.some(p => p.key === keep)) ? keep : (withData[withData.length - 1] || state.periods[state.periods.length - 1] || {}).key || null;
+    renderAll();
+  }
+
+  // ---------- render ----------
+  function renderAll(){ renderHeader(); renderLegend(); renderMainChart(); renderDetail(); renderNotes(); }
+
+  function renderHeader(){
+    const days = Math.round((startOfDay(state.last) - startOfDay(state.first)) / 86400000) + 1;
+    $('rangeSpan').textContent = stamp(state.first) + ' 〜 ' + stamp(state.last) + '（' + days + '日分）';
+    const src = $('rangeSrc'); src.textContent = state.source; src.className = 'src' + (state.isSample ? ' sample' : '');
+    const ul = $('stats'); ul.textContent = '';
+    const total = state.segs.reduce((a, x) => a + (x.end - x.start), 0);
+    const recDays = new Set(state.segs.map(x => dayKey(new Date(x.start)))).size || 1;
+    [['合計使用時間', fmtDur(total)], ['1日平均', fmtDur(total / recDays)], ['起動回数', state.launches.length + '回'], ['アプリ', new Set(state.segs.map(x => x.app)).size + '個']]
+      .forEach(([k, v]) => { const li = el('li', null, k); li.appendChild(el('b', 'num', v)); ul.appendChild(li); });
+  }
+
+  function renderLegend(){
+    const ul = $('legend'); ul.textContent = '';
+    ul.hidden = state.order.length < 2;
+    state.order.forEach(g => { const li = el('li'); const sw = el('span', 'sw'); sw.style.background = colorOfGroup(g); li.appendChild(sw); li.appendChild(el('span', null, g)); ul.appendChild(li); });
+  }
+
+  function niceTop(maxMin){
+    const steps = [1,2,5,10,15,20,30,60,120,180,240,360,480,600,720,1200,1800,2400,3600,6000];
+    const s = steps.find(x => maxMin / x <= 4) || 6000;
+    return { top: Math.max(s, Math.ceil(maxMin / s) * s), step: s };
+  }
+  function roundTopPath(x, y, w, h, r){
+    r = Math.min(r, w / 2, h);
+    return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z';
+  }
+  function groupsOf(appsMap){
+    const g = new Map();
+    appsMap.forEach((v, app) => { const k = groupOf(app); g.set(k, (g.get(k) || 0) + (typeof v === 'number' ? v : v.ms)); });
+    return g;
+  }
+
+  // bars: [{key, short, label, total, groups:Map}]
+  function drawBars(box, bars, opt){
+    box.textContent = '';
+    const W = Math.max(280, box.clientWidth || 600), H = opt.height || 230;
+    const m = { l: 56, r: 6, t: 10, b: 28 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const maxMs = Math.max(...bars.map(p => p.total), 60000);
+    const { top, step: st } = niceTop(Math.ceil(maxMs / 60000));
+    const topMs = top * 60000;
+    const y = ms => m.t + ph - (ms / topMs) * ph;
+    const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opt.aria });
+    for(let v = 0; v <= top; v += st){
+      const yy = y(v * 60000);
+      svg.appendChild(sv('line', { x1: m.l, x2: W - m.r, y1: yy, y2: yy, style: 'stroke:' + (v === 0 ? 'var(--axis)' : 'var(--grid)'), 'stroke-width': 1 }));
+      const t = sv('text', { x: m.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'num' }); t.textContent = fmtAxis(v); svg.appendChild(t);
+    }
+    const band = pw / bars.length;
+    const bw = Math.min(opt.maxBar || 40, Math.max(3, band * 0.66));
+    const every = opt.labelEvery || Math.ceil(bars.length / Math.max(1, Math.floor(pw / 46)));
+    const tip = el('div', 'tip'); tip.hidden = true;
+    bars.forEach((p, i) => {
+      const cx = m.l + band * i + band / 2, x = cx - bw / 2;
+      const sel = opt.selected != null && p.key === opt.selected;
+      if(sel) svg.appendChild(sv('rect', { x: m.l + band * i + 1, y: m.t, width: Math.max(1, band - 2), height: ph, rx: 6, style: 'fill:var(--wash)' }));
+      const segs = state.order.filter(g => p.groups.get(g) > 0).map(g => ({ g, ms: p.groups.get(g) }));
+      let acc = 0;
+      segs.forEach((sg, j) => {
+        const y0 = y(acc), y1 = y(acc + sg.ms); acc += sg.ms;
+        const isTop = j === segs.length - 1; const fill = 'fill:' + colorOfGroup(sg.g);
+        if(isTop) svg.appendChild(sv('path', { d: roundTopPath(x, y1, bw, Math.max(y0 - y1, 0.8), Math.min(4, bw / 3)), style: fill }));
+        else { const h = Math.max((y0 - y1) - ((y0 - y1) > 3 ? 1.5 : 0), 0.8); svg.appendChild(sv('rect', { x, y: y0 - h, width: bw, height: h, style: fill })); }
+      });
+      if(i % every === 0 || sel){
+        const t = sv('text', { x: cx, y: H - 8, 'text-anchor': 'middle', class: sel ? 'sel num' : 'num' }); t.textContent = p.short; svg.appendChild(t);
+      }
+      const hit = sv('rect', { x: m.l + band * i, y: m.t, width: band, height: ph + m.b, class: 'hit', tabindex: opt.onSelect ? 0 : -1, 'aria-label': p.label + ' ' + fmtDur(p.total) });
+      const show = () => showTip(box, tip, p, cx, W);
+      hit.addEventListener('pointerenter', show); hit.addEventListener('focus', show);
+      hit.addEventListener('pointerleave', () => tip.hidden = true); hit.addEventListener('blur', () => tip.hidden = true);
+      if(opt.onSelect){
+        hit.setAttribute('role', 'button');
+        hit.addEventListener('click', () => opt.onSelect(p.key));
+        hit.addEventListener('keydown', ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); opt.onSelect(p.key); } });
+      }
+      svg.appendChild(hit);
+    });
+    box.appendChild(svg); box.appendChild(tip);
+  }
+  function showTip(box, tip, p, cx, W){
+    tip.textContent = '';
+    tip.appendChild(el('div', 't', p.label));
+    const r0 = el('div', 'r'); r0.appendChild(el('span', null, '合計')); r0.appendChild(el('span', 'v', fmtDur(p.total))); tip.appendChild(r0);
+    [...p.groups.entries()].filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 6).forEach(([g, ms]) => {
+      const r = el('div', 'r'); const l = el('span'); const k = el('i', 'key'); k.style.background = colorOfGroup(g);
+      l.appendChild(k); l.appendChild(document.createTextNode(g)); r.appendChild(l); r.appendChild(el('span', 'v', fmtDur(ms))); tip.appendChild(r);
+    });
+    tip.hidden = false;
+    const px = cx * (box.clientWidth / W); const w = tip.offsetWidth;
+    let left = px + 14; if(left + w > box.clientWidth) left = px - w - 14; if(left < 0) left = Math.max(0, box.clientWidth - w);
+    tip.style.left = left + 'px'; tip.style.top = '8px';
+  }
+
+  function renderMainChart(){
+    const box = $('chart');
+    const periods = state.periods.slice(-LIMIT[state.mode]);
+    if(!periods.length){ box.textContent = ''; box.appendChild(el('p', 'empty', 'まだ集計できる記録がありません。')); return; }
+    const unit = { day: '日', week: '週', month: '月' }[state.mode];
+    drawBars(box, periods.map(p => ({ key: p.key, short: p.short, label: p.label, total: p.total, groups: groupsOf(p.apps) })), {
+      selected: state.selected, aria: unit + 'ごとのアプリ使用時間の積み上げ棒グラフ',
+      onSelect: k => { state.selected = k; state.showAll = false; renderMainChart(); renderDetail(); }
+    });
+    $('chartHint').textContent = '直近' + LIMIT[state.mode] + unit + 'まで表示します。棒をタップすると、その' + unit + 'の内訳を下に表示します。';
+  }
+
+  function renderDetail(){
+    const p = state.periods.find(x => x.key === state.selected);
+    const rows = $('rows'); rows.textContent = '';
+    const tbl = $('sessions'); tbl.textContent = '';
+    const more = $('moreBtn');
+    if(!p){ $('detailTitle').textContent = '内訳'; $('detailTotal').textContent = ''; $('hourBox').hidden = true; more.hidden = true; $('sessionsBox').hidden = true; return; }
+    $('detailTitle').textContent = p.label + 'の内訳';
+    const tot = $('detailTotal'); tot.textContent = fmtDur(p.total);
+    const launches = [...p.apps.values()].reduce((a, x) => a + x.count, 0);
+    let sub = launches + '回起動';
+    if(state.mode !== 'day' && p.days.size) sub += '・1日平均 ' + fmtDur(p.total / p.days.size);
+    tot.appendChild(el('small', null, sub));
+
+    // 時間帯別（日）/ 日別（週・月）
+    const hb = $('hourBox'); hb.hidden = false;
+    if(state.mode === 'day'){
+      hb.querySelector('h3').textContent = '時間帯別';
+      const hours = Array.from({ length: 24 }, (_, h) => ({ key: h, short: String(h), label: h + '時台', total: 0, groups: new Map() }));
+      p.segs.forEach(s => {
+        let t = s.start;
+        while(t < s.end){
+          const d = new Date(t); const h = d.getHours(); const nh = new Date(d); nh.setMinutes(0, 0, 0); nh.setHours(h + 1);
+          const e = Math.min(s.end, nh.getTime()); const g = groupOf(s.app);
+          hours[h].total += e - t; hours[h].groups.set(g, (hours[h].groups.get(g) || 0) + e - t); t = e;
+        }
+      });
+      drawBars($('hourChart'), hours, { height: 170, maxBar: 14, labelEvery: 3, aria: '時間帯別の使用時間' });
+    } else {
+      hb.querySelector('h3').textContent = '日別';
+      const days = []; let c = new Date(p.date); const end = step(p.date, state.mode);
+      while(c < end){ days.push({ key: dayKey(c), date: new Date(c), total: 0, groups: new Map() }); c = step(c, 'day'); }
+      const idx = new Map(days.map((d, i) => [d.key, i]));
+      p.segs.forEach(s => { const i = idx.get(dayKey(new Date(s.start))); if(i == null) return; const d = days[i]; const g = groupOf(s.app); d.total += s.end - s.start; d.groups.set(g, (d.groups.get(g) || 0) + s.end - s.start); });
+      days.forEach(d => { d.short = state.mode === 'week' ? WD[d.date.getDay()] : String(d.date.getDate()); d.label = (d.date.getMonth() + 1) + '月' + d.date.getDate() + '日（' + WD[d.date.getDay()] + '）'; });
+      drawBars($('hourChart'), days, { height: 170, maxBar: state.mode === 'week' ? 28 : 12, labelEvery: state.mode === 'week' ? 1 : 5, aria: '日別の使用時間' });
+    }
+
+    const list = [...p.apps.entries()].filter(x => x[1].ms > 0 || x[1].count > 0).sort((a, b) => b[1].ms - a[1].ms);
+    if(!list.length) rows.appendChild(el('li', 'empty', 'この期間の記録はありません。'));
+    const max = list.length ? Math.max(list[0][1].ms, 1) : 1;
+    const shown = state.showAll ? list : list.slice(0, 10);
+    shown.forEach(([app, a]) => {
+      const li = el('li', 'row');
+      const name = el('div', 'name'); const sw = el('span', 'sw'); sw.style.background = colorOfApp(app); name.appendChild(sw); name.appendChild(el('span', null, app));
+      const val = el('div', 'val', fmtDur(a.ms)); val.appendChild(el('small', null, a.count ? a.count + '回起動' : '起動の記録なし'));
+      const tr = el('div', 'track'); const bar = el('i'); bar.style.width = Math.max(1.5, a.ms / max * 100) + '%'; bar.style.background = colorOfApp(app); tr.appendChild(bar);
+      li.appendChild(name); li.appendChild(val); li.appendChild(tr); rows.appendChild(li);
+    });
+    more.hidden = list.length <= 10;
+    more.textContent = state.showAll ? '上位10件だけ表示' : 'すべて表示（' + list.length + '個）';
+
+    $('sessionsBox').hidden = !p.segs.length;
+    const thead = el('thead'); const hr = el('tr');
+    [['時刻', ''], ['アプリ', ''], ['使用時間', 'r']].forEach(([h, c]) => hr.appendChild(el('th', c || null, h)));
+    thead.appendChild(hr); tbl.appendChild(thead);
+    const tb = el('tbody');
+    p.segs.slice().sort((a, b) => a.start - b.start).forEach(s => {
+      const tr = el('tr');
+      tr.appendChild(el('td', null, (state.mode === 'day' ? '' : md(new Date(s.start)) + ' ') + hm(s.start) + '〜' + hm(s.end)));
+      tr.appendChild(el('td', null, s.app));
+      tr.appendChild(el('td', 'r', fmtDur(s.end - s.start)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+  }
+
+  function renderNotes(){
+    const ul = $('notes'); ul.textContent = '';
+    [
+      '記録の1行ごとに「その時点で前面にあったアプリ」を読み取り、次の記録までをそのアプリの使用時間としています。「閉じた」の行のアプリ名は、閉じた直後に前面にあるアプリを表すため、Instagramや設定など記録対象外のアプリも内訳に出ます。',
+      'アプリ名が空の「閉じた」の行は、ホーム画面に戻った、または画面をロックした時点として扱い、そこで区切ります。',
+      '画面をロックしたときは記録が残らないため、次の記録まで間隔があいた場合は「記録の間隔があいたときの上限」で選んだ時間（いまは' + (state.cap / 60000) + '分）で打ち切っています（このログでは ' + state.capped + '回）。上限を変えると合計時間が大きく変わるので、iPhoneの「設定 → スクリーンタイム」の数字に近くなる値を選んでください。',
+      '起動回数は「開いた」の行を数えています。アプリ名が空やショートカットの行は除いています。',
+      '週は月曜始まりです。日をまたいだ使用は、それぞれの日に分けて数えています。',
+      '読み込んだログはこの端末のブラウザに記憶します。表示中のログが古いときは、もう一度読み込んでください。'
+    ].forEach(t => ul.appendChild(el('li', null, t)));
+  }
+
+  // ---------- events ----------
+  $('modeDay').addEventListener('click', () => setMode('day'));
+  $('modeWeek').addEventListener('click', () => setMode('week'));
+  $('modeMonth').addEventListener('click', () => setMode('month'));
+  $('cap').addEventListener('change', e => { state.cap = (+e.target.value || 10) * 60000; storeSet(CAP_KEY, e.target.value); load(state.text, state.source, state.isSample); });
+  $('moreBtn').addEventListener('click', () => { state.showAll = !state.showAll; renderDetail(); });
+  $('file').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const text = String(rd.result || '');
+      const now = new Date();
+      const label = f.name + ' を ' + md(now) + ' ' + hm(now.getTime()) + ' に読み込み';
+      if(load(text, label, false)) storeSet(STORE_KEY, JSON.stringify({ text, label }));
+      e.target.value = '';
+    };
+    rd.onerror = () => showErr('ファイルを読み込めませんでした。もう一度選んでください。');
+    rd.readAsText(f, 'utf-8');
+  });
+  let rz; if(window.ResizeObserver){ new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => { if(state.periods.length){ renderMainChart(); renderDetail(); } }, 100); }).observe($('chart')); }
+
+  // ---------- start ----------
+  const savedCap = +storeGet(CAP_KEY); if([5,10,15,30].includes(savedCap)){ state.cap = savedCap * 60000; $('cap').value = String(savedCap); }
+  const savedMode = storeGet(MODE_KEY); if(['day','week','month'].includes(savedMode)) state.mode = savedMode;
+  let saved = null; try{ saved = JSON.parse(storeGet(STORE_KEY) || 'null'); }catch(e){}
+  if(saved && saved.text && analyse(saved.text)) load(saved.text, saved.label, false);
+  renderNotes();
+})();
+</script>
+
+</body>
+</html>
